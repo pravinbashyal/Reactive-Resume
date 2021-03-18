@@ -26,7 +26,25 @@ const ResumeContext = createContext({});
 
 const ResumeProvider = ({ children }) => {
   const { debouncedUpdateResume } = useContext(DatabaseContext);
-
+  const sectionsWithItemsKeys = [
+    'work',
+    'social',
+    'education',
+    'awards',
+    'skills',
+    'hobbies',
+    'languages',
+    'references',
+  ];
+  const fetchItems = (
+    { items = [] } = {
+      items: [],
+    },
+  ) =>
+    items.map((item) => ({
+      ...item,
+      id: uuidv4(),
+    }));
   const memoizedReducer = useCallback(
     (state, { type, payload }) => {
       let newState;
@@ -146,88 +164,14 @@ const ResumeProvider = ({ children }) => {
           newState.preview = temp.preview;
           newState.createdAt = temp.createdAt;
           newState.updatedAt = temp.updatedAt;
-          newState.profile = {
-            address: {
-              city: get(payload, 'basics.location.city'),
-              line1: get(payload, 'basics.location.address'),
-              line2: get(payload, 'basics.location.region'),
-              pincode: get(payload, 'basics.location.postalCode'),
-            },
-            email: get(payload, 'basics.email'),
-            firstName: get(payload, 'basics.name'),
-            phone: get(payload, 'basics.phone'),
-            photograph: get(payload, 'basics.picture'),
-            subtitle: get(payload, 'basics.label'),
-            website: get(payload, 'basics.website'),
-          };
-          newState.social.items = get(payload, 'basics.profiles')
-            ? payload.basics.profiles.map((x) => ({
-                id: uuidv4(),
-                network: x.network,
-                username: x.username,
-                url: x.url,
-              }))
-            : [];
-          newState.objective.body = get(payload, 'basics.summary');
-          newState.work.items = payload.work
-            ? payload.work.map((x) => ({
-                id: uuidv4(),
-                company: x.company,
-                endDate: x.endDate,
-                position: x.position,
-                startDate: x.startDate,
-                summary: x.summary,
-                website: x.website,
-              }))
-            : [];
-          newState.education.items = payload.education
-            ? payload.education.map((x) => ({
-                id: uuidv4(),
-                degree: x.studyType,
-                endDate: x.endDate,
-                field: x.area,
-                gpa: x.gpa,
-                institution: x.institution,
-                startDate: x.startDate,
-                summary: x.courses.join('\n'),
-              }))
-            : [];
-          newState.awards.items = payload.awards
-            ? payload.awards.map((x) => ({
-                id: uuidv4(),
-                awarder: x.awarder,
-                date: x.date,
-                summary: x.summary,
-                title: x.title,
-              }))
-            : [];
-          newState.skills.items = payload.skills
-            ? payload.skills.map((x) => ({
-                id: uuidv4(),
-                level: 'Fundamental Awareness',
-                name: x.name,
-              }))
-            : [];
-          newState.hobbies.items = payload.interests
-            ? payload.interests.map((x) => ({
-                id: uuidv4(),
-                name: x.name,
-              }))
-            : [];
-          newState.languages.items = payload.languages
-            ? payload.languages.map((x) => ({
-                id: uuidv4(),
-                name: x.language,
-                fluency: x.fluency,
-              }))
-            : [];
-          newState.references.items = payload.references
-            ? payload.references.map((x) => ({
-                id: uuidv4(),
-                name: x.name,
-                summary: x.reference,
-              }))
-            : [];
+          newState.profile = payload.profile;
+          newState.social.items = payload.social.items;
+          newState.objective = payload.objective;
+
+          sectionsWithItemsKeys.forEach((sectionKey) => {
+            newState[sectionKey].items = fetchItems(payload[sectionKey]);
+          });
+
           debouncedUpdateResume(newState);
           return newState;
 
